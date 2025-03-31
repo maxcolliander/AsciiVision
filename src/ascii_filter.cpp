@@ -28,21 +28,120 @@ cv::Mat convertToGrayscale(const cv::Mat &frame)
     return grayFrame;
 }
 
-cv::Mat quantizeLuminance(const cv::Mat &frame) 
+cv::Mat convertToAscii(cv::Mat &frame)
 {
-    // Quantize the luminance values to 10 levels for 10 destinct characters
-    cv::Mat quantizedFrame = frame.clone();
-    for (int i = 0; i < quantizedFrame.rows; ++i) {
-        for (int j = 0; j < quantizedFrame.cols; ++j) {
-            uchar pixelValue = quantizedFrame.at<uchar>(i, j);
-            int quantizedValue = (pixelValue / 25) * 25;
-            quantizedFrame.at<uchar>(i, j) = quantizedValue;
+    // Convert image to grayscale
+    cv::Mat grayFrame = convertToGrayscale(frame);
+    auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, 5);
+    cv::Mat asciiArt = edgeAsciiArt.clone();
+    for (int i = 0; i < grayFrame.rows; i += 8) {
+        for (int j = 0; j < grayFrame.cols; j += 8) {
+            if (occupancyMask.at<uchar>(i, j) == 255) {
+                continue;
+            } else {
+
+                int blockSum = 0;
+                int pixelCount = 0;
+                
+                for (int y = i; y < std::min(i + 8, grayFrame.rows); ++y) {
+                    for (int x = j; x < std::min(j + 8, grayFrame.cols); ++x) {
+                        blockSum += grayFrame.at<uchar>(y, x);
+                        pixelCount++;
+                    }
+                }
+                int avgLuminance = blockSum / pixelCount;
+                int asciiIndex = avgLuminance * (asciiChars.length() - 1) / 255;
+                char asciiChar = asciiChars[asciiIndex];
+
+                cv::putText(asciiArt, std::string(1, asciiChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+            }
         }
     }
-    return quantizedFrame;
+
+    return asciiArt;
 }
 
-cv::Mat convertToAscii(cv::Mat& frame)
+cv::Mat applyCanny(const cv::Mat &frame, int kernelSize)
 {
-    
+    cv::Mat blurredImage;
+    cv::GaussianBlur(frame, blurredImage, cv::Size(kernelSize, kernelSize), 0);
+    cv::Mat edges;
+
+    cv::Canny(blurredImage, edges, 100, 200);
+
+    return edges;
+}
+
+std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int kernelSize)
+{
+    cv::Mat edges = applyCanny(grayFrame, kernelSize);
+
+    cv::Mat edgeAsciiArt = cv::Mat::zeros(edges.size(), CV_8UC3);
+
+    cv::Mat occupancyMask = cv::Mat::zeros(edges.size(), CV_8UC1);
+
+    for (int i = 0; i < edges.rows; i += 8) {
+        for (int j = 0; j < edges.cols; j += 8) {
+            int edgePixelCount = 0;
+            int totalPixels = 0;
+            double avgAngle = 0.0;
+
+            for (int y = i; y < std::min(i + 8, edges.rows); ++y) {
+                for (int x = j; x < std::min(j + 8, edges.cols); ++x) {
+                    if (edges.at<uchar>(y, x) == 255) { 
+                        edgePixelCount++;
+                        totalPixels++;
+
+
+                        int gx = 0, gy = 0;
+                        if (x > 0 && x < edges.cols - 1 && y > 0 && y < edges.rows - 1) {
+                            gx = edges.at<uchar>(y - 1, x + 1) - edges.at<uchar>(y - 1, x - 1)
+                                 + 2 * (edges.at<uchar>(y, x + 1) - edges.at<uchar>(y, x - 1))
+                                 + edges.at<uchar>(y + 1, x + 1) - edges.at<uchar>(y + 1, x - 1);
+
+                            gy = edges.at<uchar>(y + 1, x - 1) - edges.at<uchar>(y - 1, x - 1)
+                                 + 2 * (edges.at<uchar>(y + 1, x) - edges.at<uchar>(y - 1, x))
+                                 + edges.at<uchar>(y + 1, x + 1) - edges.at<uchar>(y - 1, x + 1);
+                        }
+
+                        double angle = std::atan2(gy, gx) * 180.0 / CV_PI;
+                        if (angle < 0) angle += 180.0;
+
+                        avgAngle += angle;
+                    }
+                }
+            }
+
+
+            if (totalPixels == 0) continue;
+
+
+            avgAngle /= totalPixels;
+
+
+            char edgeChar;
+            if (avgAngle >= 80 && avgAngle < 100) {
+                edgeChar = '|';  
+            }
+            else if (avgAngle >= 30 && avgAngle < 60) {
+                edgeChar = '/';  
+            }
+            else if (avgAngle >= 125 && avgAngle < 155) {
+                edgeChar = '\\';  
+            }
+            else if (avgAngle >= 0 && avgAngle < 10) {
+                edgeChar = '_';  
+            }
+
+            cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(j, i + 8),
+                        cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+            for (int y = i; y < std::min(i + 8, edges.rows); ++y) {
+                for (int x = j; x < std::min(j + 8, edges.cols); ++x) {
+                    occupancyMask.at<uchar>(y, x) = 255;
+                }
+            }
+        }
+    }
+
+    return std::make_pair(edgeAsciiArt, occupancyMask);
 }

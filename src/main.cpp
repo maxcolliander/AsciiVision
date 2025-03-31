@@ -31,11 +31,7 @@ int main(int argc, char** argv) {
             break;
         }
 
-        cv::Mat smallFrame = downscale(frame);
-        cv::Mat resizedFrame = upscale(smallFrame);
-        cv::Mat grayFrame = convertToGrayscale(resizedFrame);
-        cv::Mat quantizedFrame = quantizeLuminance(grayFrame);
-        cv::Mat asciiFrame = convertToAscii(quantizedFrame);
+        cv::Mat asciiFrame = convertToAscii(frame);
 
         cv::imshow("ASCII Video", asciiFrame);
         

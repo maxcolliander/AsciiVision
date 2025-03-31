@@ -4,7 +4,8 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
-const char asciiChars[10] = {' ', '.', ':', '+', 'o', 'O', 'M', 'W', '@'}; // Characters used for ASCII art from dark to light
+const std::string asciiChars = " .icoPO?@■"; // Characters used for ASCII art from dark to light¨
+const std::string edgeChars = "|_-/\\X";
 
 cv::Mat downscale(const cv::Mat& frame);
 
@@ -12,17 +13,13 @@ cv::Mat upscale(const cv::Mat& frame);
 
 cv::Mat convertToGrayscale(const cv::Mat& frame);
 
-cv::Mat quantizeLuminance(const cv::Mat& frame);
-
 cv::Mat convertToAscii(cv::Mat& frame);
 
 cv::Mat detectEdges(const cv::Mat& frame);
 
-cv::Mat applyGaussianBlur(const cv::Mat& frame);
+cv::Mat applyCanny(const cv::Mat& frame, int kernelSize = 3);
 
-cv::Mat applyCanny(const cv::Mat& frame);
-
-cv::Mat applyEdgeBasedAscii(const cv::Mat& frame);
+std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &frame, int kernelSize = 3);
 
 cv::Mat applyAsciiFilter(const cv::Mat& frame);
 
