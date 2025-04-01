@@ -32,7 +32,7 @@ cv::Mat convertToAscii(cv::Mat &frame)
 {
     // Convert image to grayscale
     cv::Mat grayFrame = convertToGrayscale(frame);
-    auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, 5);
+    auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, 3);
     cv::Mat asciiArt = edgeAsciiArt.clone();
     for (int i = 0; i < grayFrame.rows; i += 8) {
         for (int j = 0; j < grayFrame.cols; j += 8) {
@@ -123,14 +123,17 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
             if (avgAngle >= 80 && avgAngle < 100) {
                 edgeChar = '|';  
             }
-            else if (avgAngle >= 30 && avgAngle < 60) {
+            else if (avgAngle >= 40 && avgAngle < 50) {
                 edgeChar = '/';  
             }
-            else if (avgAngle >= 125 && avgAngle < 155) {
+            else if (avgAngle >= 130 && avgAngle < 140) {
                 edgeChar = '\\';  
             }
-            else if (avgAngle >= 0 && avgAngle < 10) {
-                edgeChar = '_';  
+            else if ((avgAngle >= 0 && avgAngle < 10) || (avgAngle >= 170 && avgAngle < 180)) {
+                edgeChar = '-';  
+            }
+            else {
+                continue;
             }
 
             cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(j, i + 8),

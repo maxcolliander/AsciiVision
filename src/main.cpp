@@ -4,7 +4,7 @@
 
 using namespace std;
 
-// g++ -o video_player main.cpp `pkg-config --cflags --libs opencv4`
+// g++ -O2 -o video_player src/main.cpp src/ascii_filter.cpp `pkg-config --cflags --libs opencv4` -Iinclude`
 
 int main(int argc, char** argv) {
     if (argc != 2) {
