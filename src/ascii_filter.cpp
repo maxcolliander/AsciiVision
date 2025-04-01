@@ -95,7 +95,8 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
             int edgePixelCount = 0;
             int totalPixels = 0;
             double avgAngle = 0.0;
-
+            int gx = 0;
+            int gy = 0;
             for (int y = i; y < std::min(i + 8, edges.rows); ++y) {
                 edgePtr = edges.ptr<uchar>(y);
                 maskPtr = occupancyMask.ptr<uchar>(y);
@@ -105,7 +106,6 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
                         totalPixels++;
 
 
-                        int gx = 0, gy = 0;
                         if (x > 0 && x < edges.cols - 1 && y > 0 && y < edges.rows - 1) {
                             gx = edgePtr[x + 1] - edgePtr[x - 1];
                             gy = edgePtr[x] - edgePtr[x];
@@ -120,11 +120,11 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
             }
 
 
-            if (totalPixels == 0) continue;
-
+            if (totalPixels == 0) {
+                continue; 
+            }
 
             avgAngle /= totalPixels;
-
 
             char edgeChar;
             if (avgAngle >= 80 && avgAngle < 100) {
@@ -155,4 +155,3 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
 
     return std::make_pair(edgeAsciiArt, occupancyMask);
 }
-
