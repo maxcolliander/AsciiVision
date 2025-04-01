@@ -112,8 +112,9 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
                         }
 
                         double angle = std::atan2(gy, gx) * 180.0 / CV_PI;
-                        if (angle < 0) angle += 180.0;
-
+                        if (angle < 0) {
+                            angle += 180.0;
+                        }
                         avgAngle += angle;
                     }
                 }
