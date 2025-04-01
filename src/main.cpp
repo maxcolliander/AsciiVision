@@ -24,18 +24,30 @@ int main(int argc, char** argv) {
 
     cv::Mat frame;
 
+    int frameCount = 0;
+    double totalTime = 0.0;
+    double startTime = 0.0;
+    double frames = 0.0;
+
+
     while (true) {
-        cap >> frame; 
+        cap >> frame;
+        startTime = cv::getTickCount(); 
 
         if (frame.empty()) {
             break;
         }
 
         cv::Mat asciiFrame = convertToAscii(frame);
-
-        cv::imshow("ASCII Video", asciiFrame);
+        frameCount++;
+        double duration = (cv::getTickCount() - startTime) / cv::getTickFrequency();
+        totalTime += duration;
+        if (frameCount % 10 == 0) {
+            frames = frameCount / totalTime;
+            cout << "FPS: " << frames << endl;
+        }
         
-
+        cv::imshow("ASCII Video", asciiFrame);
         if (cv::waitKey(1000 / fps) >= 0) {
             break;
         }

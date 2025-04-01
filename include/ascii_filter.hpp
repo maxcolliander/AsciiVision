@@ -5,7 +5,6 @@
 #include <opencv2/opencv.hpp>
 
 const std::string asciiChars = " .icoPO?@■"; // Characters used for ASCII art from dark to light¨
-const std::string edgeChars = "|_-/\\X";
 
 cv::Mat downscale(const cv::Mat& frame);
 
@@ -15,15 +14,13 @@ cv::Mat convertToGrayscale(const cv::Mat& frame);
 
 cv::Mat convertToAscii(cv::Mat& frame);
 
-cv::Mat detectEdges(const cv::Mat& frame);
-
 cv::Mat applyCanny(const cv::Mat& frame, int kernelSize = 3);
 
 std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &frame, int kernelSize = 3);
 
-cv::Mat applyAsciiFilter(const cv::Mat& frame);
+void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j);
 
-
+void processBlockEdgeAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j); // Parallelized version ??
 
 
 #endif
