@@ -33,3 +33,5 @@ make
 - Add a possibility to do --help from terminal to get available features
 - Create ascii function to handle all the middle steps, --> more modular
 - Improve FPS
+- Choose file option if ran.
+- Color correction
