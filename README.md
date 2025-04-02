@@ -26,7 +26,6 @@ make
 ## TODO
 - Parallelize applyEdgeBasedAscii function
 - Improve applyEdgeBasedAscii / Edge detection maybe combine sobel and canny for better edge detection
-- Fix image stuttering, suspicion occupencymask is the issue
 - Support webcamera usage and live footage
 - Add color method, ascii symbols take on color from footage
 - Add texture packs, cyberpunk, matrix and more
