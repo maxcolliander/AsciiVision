@@ -13,7 +13,7 @@ make
 ```
 
 ## Intellisense
-- Make sure to add follow line to c_cpp_properties.json
+- Make sure to add following line to c_cpp_properties.json
 ```
 "/usr/include/opencv4/**"
 ```
