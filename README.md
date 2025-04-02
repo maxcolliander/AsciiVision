@@ -26,8 +26,10 @@ make
 ## TODO
 - Parallelize applyEdgeBasedAscii function
 - Improve applyEdgeBasedAscii / Edge detection maybe combine sobel and canny for better edge detection
+- Improve angle calculation and interval for ascii placement, maybe use 360 instead of 180
 - Support webcamera usage and live footage
 - Add color method, ascii symbols take on color from footage
 - Add texture packs, cyberpunk, matrix and more
 - Add a possibility to do --help from terminal to get available features
 - Create ascii function to handle all the middle steps, --> more modular
+- Improve FPS
