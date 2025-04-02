@@ -75,9 +75,8 @@ void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat 
 
 cv::Mat applyCanny(const cv::Mat &frame, int kernelSize)
 {
-    cv::Mat blurredImage;
+    cv::Mat blurredImage, edges;
     cv::GaussianBlur(frame, blurredImage, cv::Size(kernelSize, kernelSize), 0);
-    cv::Mat edges;
     cv::Canny(blurredImage, edges, 100, 200);
 
     return edges;
