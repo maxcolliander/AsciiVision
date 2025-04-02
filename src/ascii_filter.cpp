@@ -46,6 +46,9 @@ cv::Mat convertToAscii(cv::Mat &frame)
 
 void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j)
 {
+    if (i % 8 != 0 || j % 8 != 0) {
+        return;
+    }
     if (occupancyMask.at<uchar>(i, j) == 255) {
         return;
     } 
