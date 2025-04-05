@@ -2,7 +2,7 @@
 AsciiVision is a video filter that converts video frames into ASCII art. It supports processing video files and includes features like edge detection and ASCII-based rendering.
 
 ## Demo 
-[![AsciiVision Demo](media/SukunaClippedGif.gif)]
+![AsciiVision Demo](media/SukunaClippedGif.gif)
 
 ---
 ## Features
