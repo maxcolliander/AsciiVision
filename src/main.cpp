@@ -15,7 +15,7 @@ void showProgress(int currentFrame, int totalFrames) {
     cout << "[";
     for (int i = 0; i < barWidth; ++i) {
         if (i < pos) cout << "#";
-        else cout << " ";
+        else cout << "-";
     }
     cout << "] " << int(progress * 100.0) << "%\r";  // Display percentage
     cout.flush();
@@ -43,7 +43,6 @@ int main(int argc, char** argv) {
     int width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
     int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
     int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
-    cout << "FPS: " << fps << endl;
 
     cv::VideoWriter writer;
 
