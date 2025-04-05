@@ -7,11 +7,6 @@ using namespace std;
 
 // g++ -O2 -o video_player src/main.cpp src/ascii_filter.cpp `pkg-config --cflags --libs opencv4` -Iinclude`
 
-bool isDisplayAvailable(){
-    const char* display = getenv("DISPLAY");
-    return display != nullptr && string(display).length() > 0;
-}
-
 void showProgress(int currentFrame, int totalFrames) {
     int barWidth = 50;  // Width of the progress bar
     float progress = (float)currentFrame / totalFrames;
