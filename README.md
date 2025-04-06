@@ -84,7 +84,7 @@ Here are some planned improvements and features for AsciiVision:
 - [ ] Optimize FPS for smoother performance.
 - [ ] Add a file selection option when the program is run.
 - [ ] Implement color correction for better visual output.
-
+- [ ] Add braille option --braille
 ---
 
 ## License
