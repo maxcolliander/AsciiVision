@@ -22,15 +22,21 @@ void showProgress(int currentFrame, int totalFrames) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2 || argc > 3) {
-        cerr << "Usage: " << argv[0] << " <video_file> [--save]" << std::endl;
+    if (argc < 2 || argc > 4) {
+        cerr << "Usage: " << argv[0] << " <video_file> [--save] [--color]" << std::endl;
         return -1;
     }
 
     string videoFile = argv[1];
     bool saveToFile = false;
-    if (argc == 3 && string(argv[2]) == "--save") {
-        saveToFile = true;
+    bool colorOutput = false;
+    for (int i = 2; i < argc; ++i){
+        if (string(argv[i]) == "--save") {
+            saveToFile = true;
+        }
+        else if (string(argv[i]) == "--color") {
+            colorOutput = true;
+        }
     }
     cv::VideoCapture cap(videoFile);
 

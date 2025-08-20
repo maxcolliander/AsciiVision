@@ -28,7 +28,7 @@ cv::Mat convertToGrayscale(const cv::Mat &frame)
     return grayFrame;
 }
 
-cv::Mat convertToAscii(cv::Mat &frame)
+cv::Mat convertToAscii(cv::Mat &frame, bool useSameColor)
 {
     cv::Mat grayFrame = convertToGrayscale(frame);
 

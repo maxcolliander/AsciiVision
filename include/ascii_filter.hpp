@@ -12,15 +12,12 @@ cv::Mat upscale(const cv::Mat& frame);
 
 cv::Mat convertToGrayscale(const cv::Mat& frame);
 
-cv::Mat convertToAscii(cv::Mat& frame);
+cv::Mat convertToAscii(cv::Mat& frame, bool useSameColor = false);
 
 cv::Mat applyCanny(const cv::Mat& frame, int kernelSize = 3);
 
 std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &frame, int kernelSize = 3);
 
 void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j);
-
-void processBlockEdgeAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j); // Parallelized version ??
-
 
 #endif
