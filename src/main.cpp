@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
     }
     
     double fps = cap.get(cv::CAP_PROP_FPS);
+    if (fps <= 0) fps = 30;
     int width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
     int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
     int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
@@ -86,8 +87,8 @@ int main(int argc, char** argv) {
         }
 
         string baseName = videoFile.substr(lastSlash + 1, lastDot - lastSlash - 1);
-        string outputFile = baseName + "_ascii.avi";
-        writer.open(outputFile, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps, cv::Size(width, height), true);
+        string outputFile = baseName + "_ascii.mp4";
+        writer.open(outputFile, cv::VideoWriter::fourcc('a', 'v', 'c', '1'), fps, cv::Size(width, height), true);
         if (!writer.isOpened()) {
             cerr << "Error: Could not open output video file for writing." << endl;
             return -1;
@@ -126,7 +127,8 @@ int main(int argc, char** argv) {
         } else {
             if (frameCount % 10 == 0) {
                 frames = frameCount / totalTime;
-                cout << "FPS: " << frames << endl;
+                cout << "Original FPS: " << fps 
+                    << " | Processing FPS: " << frames << endl;
             }
             cv::imshow("ASCII Video", asciiFrame);
             if (cv::waitKey(1000 / fps) >= 0) {
