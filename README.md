@@ -7,9 +7,8 @@ AsciiVision is a video filter that converts video frames into ASCII art. It supp
 ---
 ## Features
 - Converts video frames into ASCII art.
-- Supports edge-based ASCII rendering using Canny edge detection.
+- Supports edge-based ASCII rendering using Canny and Sobel edge detection.
 - Parallelized processing for improved performance.
-- Customizable ASCII characters for rendering.
 - Modular design for easy extension.
 - Option to save processed videos to disk.
 
@@ -59,6 +58,7 @@ To process a video file, use the following command:
 - `<video_file>`: Path to the input video file.
 - `--save`: (Optional) Save the processed video to disk.
 - `--color R,G,B`: (Optional) Color all ASCII symbols with the specified RGB color(e.g., `--color 255,0,0` for red).
+- `--help`: Display a help message.
 
 ### Example
 ```sh
