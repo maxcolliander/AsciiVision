@@ -44,6 +44,23 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
     return edgeAsciiArt;
 }
 
+EdgeData detectEdges(const cv::Mat &frame, int kernelSize)
+{
+    cv::Mat blurred, edges, gradX, gradY;
+
+    // Reduce noise with gaussian blur
+    cv::GaussianBlur(frame, blurred, cv::Size(kernelSize, kernelSize), 0);
+
+    // Canny edge detection edges -> binary edge map
+    cv::Canny(blurred, edges, 100, 200);
+
+    // Sobel edge detection for gradients
+    cv::Sobel(blurred, gradX, CV_32F, 1, 0, 3);
+    cv::Sobel(blurred, gradY, CV_32F, 0, 1, 3);
+
+    return {edges, gradX, gradY};
+}
+
 void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, cv::Scalar color)
 {
     if (i % 8 != 0 || j % 8 != 0) {
@@ -73,88 +90,50 @@ void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat 
     cv::putText(asciiArt, std::string(1, asciiChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, color, 1, cv::LINE_AA);
 }
 
-cv::Mat applyCanny(const cv::Mat &frame, int kernelSize)
-{
-    cv::Mat blurredImage, edges;
-    cv::GaussianBlur(frame, blurredImage, cv::Size(kernelSize, kernelSize), 0);
-    cv::Canny(blurredImage, edges, 100, 200);
+std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar color, int kernelSize) {
 
-    return edges;
-}
+    // Convert to grayscale and downscale for cheaper edge detection
+    cv::Mat grayFrame = convertToGrayscale(frame);
+    cv::Mat smallGray = downscale(grayFrame);
 
-std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, cv::Scalar color, int kernelSize)
-{
-    cv::Mat edges = applyCanny(grayFrame, kernelSize);
+    // Detect edges using Sobel and Canny methods
+    EdgeData edgeData = detectEdges(smallGray, kernelSize);
 
-    cv::Mat edgeAsciiArt = cv::Mat::zeros(edges.size(), CV_8UC3);
+    // Create an empty ASCII art image
+    cv::Mat edgeAsciiArt(frame.size(), CV_8UC3, cv::Scalar(0, 0, 0));
 
-    cv::Mat occupancyMask = cv::Mat::zeros(edges.size(), CV_8UC1);
+    // Create an occupancy mask to track processed blocks
+    cv::Mat occupancyMask(frame.size(), CV_8UC1, cv::Scalar(0));
 
-    uchar* edgePtr;
-    uchar* maskPtr;
-    for (int i = 0; i < edges.rows; i += 8) {
-        for (int j = 0; j < edges.cols; j += 8) {
-            int edgePixelCount = 0;
-            int totalPixels = 0;
-            double avgAngle = 0.0;
-            int gx = 0;
-            int gy = 0;
-            for (int y = i; y < std::min(i + 8, edges.rows); ++y) {
-                edgePtr = edges.ptr<uchar>(y);
-                maskPtr = occupancyMask.ptr<uchar>(y);
-                for (int x = j; x < std::min(j + 8, edges.cols); ++x) {
-                    if (edgePtr[x] == 255) { 
-                        edgePixelCount++;
-                        totalPixels++;
+    float scaleX = static_cast<float>(frame.cols) / smallGray.cols;
+    float scaleY = static_cast<float>(frame.rows) / smallGray.rows;
 
+    int cellSize = 8;
 
-                        if (x > 0 && x < edges.cols - 1 && y > 0 && y < edges.rows - 1) {
-                            gx = edgePtr[x + 1] - edgePtr[x - 1];
-                            gy = edgePtr[x] - edgePtr[x];
-                        }
+    for (int i = 0; i < smallGray.rows; i++) {
+        for (int j = 0; j < smallGray.cols; j++) {
+            if (edgeData.edges.at<uchar>(i, j) != 0) {
+                float gx = edgeData.gradX.at<float>(i, j);
+                float gy = edgeData.gradY.at<float>(i, j);
+                char edgeChar;
+                float absGx = std::abs(gx), absGy = std::abs(gy);
+                if (absGx > absGy * 2) edgeChar = '-';
+                else if (absGy > absGx * 2) edgeChar = '|';
+                else if ((gx > 0 && gy > 0) || (gx < 0 && gy < 0)) edgeChar = '/';
+                else edgeChar = '\\';
 
-                        double angle = std::atan2(gy, gx) * 180.0 / CV_PI;
-                        if (angle < 0) {
-                            angle += 180.0;
-                        }
-                        avgAngle += angle;
-                    }
-                }
-            }
+                int fullX = static_cast<int>(j * scaleX);
+                int fullY = static_cast<int>(i * scaleY);
 
+                fullX = (fullX / cellSize) * cellSize;
+                fullY = (fullY / cellSize) * cellSize;
 
-            if (totalPixels == 0) {
-                continue; 
-            }
+                cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(fullX, fullY + cellSize), cv::FONT_HERSHEY_PLAIN, 0.5, color, 1, cv::LINE_AA);
 
-            avgAngle /= totalPixels;
-
-            char edgeChar;
-            if (avgAngle >= 80 && avgAngle < 100) {
-                edgeChar = '|';  
-            }
-            else if (avgAngle >= 30 && avgAngle < 60) {
-                edgeChar = '/';  
-            }
-            else if (avgAngle >= 120 && avgAngle < 150) {
-                edgeChar = '\\';  
-            }
-            else if ((avgAngle >= 0 && avgAngle < 10) || (avgAngle >= 170 && avgAngle < 180)) {
-                edgeChar = '-';  
-            }
-            else {
-                continue;
-            }
-
-            cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, color, 1, cv::LINE_AA);
-            for (int y = i; y < std::min(i + 8, edges.rows); ++y) {
-                maskPtr = occupancyMask.ptr<uchar>(y);
-                for (int x = j; x < std::min(j + 8, edges.cols); ++x) {
-                    maskPtr[x] = 255;
-                }
+                cv::rectangle(occupancyMask, cv::Rect(fullX, fullY, cellSize, cellSize), cv::Scalar(255), cv::FILLED);
             }
         }
     }
 
-    return std::make_pair(edgeAsciiArt, occupancyMask);
+    return {edgeAsciiArt, occupancyMask};
 }

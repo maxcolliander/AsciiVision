@@ -54,6 +54,13 @@ int main(int argc, char** argv) {
                 return -1;
             }
         }
+        else if (string(argv[i]) == "--help") {
+            cout << "Usage: " << argv[0] << " <video_file> [--save] [--color R,G,B]" << endl;
+            cout << "Options:" << endl;
+            cout << "  --save       Save the ASCII video to a file." << endl;
+            cout << "  --color R,G,B  Use specified color for ASCII symbols." << endl;
+            return 0;
+        }
     }
     cv::VideoCapture cap(videoFile);
 
