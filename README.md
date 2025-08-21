@@ -79,7 +79,7 @@ Here are some planned improvements and features for AsciiVision:
 - [ ] Add a file selection option when the program is run.
 - [ ] Implement color correction for better visual output --saturation.
 - [ ] Add braille option --braille
----
+- [ ] Add settings as a input to -> convertToAscii function
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.
