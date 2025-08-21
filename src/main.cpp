@@ -23,19 +23,36 @@ void showProgress(int currentFrame, int totalFrames) {
 
 int main(int argc, char** argv) {
     if (argc < 2 || argc > 4) {
-        cerr << "Usage: " << argv[0] << " <video_file> [--save] [--color]" << std::endl;
+        cerr << "Usage: " << argv[0] << " <video_file> [--save] [--color [R,G,G]]" << std::endl;
         return -1;
     }
 
     string videoFile = argv[1];
     bool saveToFile = false;
-    bool colorOutput = false;
+    bool useColor = false;
+    bool useTheme = false;
+    cv::Scalar color;
     for (int i = 2; i < argc; ++i){
         if (string(argv[i]) == "--save") {
             saveToFile = true;
         }
         else if (string(argv[i]) == "--color") {
-            colorOutput = true;
+            useColor = true;
+            if (i + 1 < argc) {
+                std::string colorStr = argv[++i];
+                std::istringstream iss(colorStr);
+                char comma;
+                int r, g, b;
+                if (iss >> r >> comma >> g >> comma >> b && comma == ',') {
+                    color = cv::Scalar(b, g, r);  // OpenCV uses BGR format
+                } else {
+                    cerr << "Error: Invalid color format. Use R,G,B." << endl;
+                    return -1;
+                }
+            } else {
+                cerr << "Error: --color option requires an argument." << endl;
+                return -1;
+            }
         }
     }
     cv::VideoCapture cap(videoFile);
@@ -78,7 +95,7 @@ int main(int argc, char** argv) {
     double totalTime = 0.0;
     double startTime = 0.0;
     double frames = 0.0;
-
+    cv::Mat asciiFrame;
 
     while (true) {
         cap >> frame;
@@ -88,7 +105,10 @@ int main(int argc, char** argv) {
             break;
         }
 
-        cv::Mat asciiFrame = convertToAscii(frame);
+        if (useColor)
+            asciiFrame = convertToAscii(frame, color);
+        else
+            asciiFrame = convertToAscii(frame);
         frameCount++;
         double duration = (cv::getTickCount() - startTime) / cv::getTickFrequency();
         totalTime += duration;

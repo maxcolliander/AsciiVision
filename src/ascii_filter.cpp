@@ -28,23 +28,23 @@ cv::Mat convertToGrayscale(const cv::Mat &frame)
     return grayFrame;
 }
 
-cv::Mat convertToAscii(cv::Mat &frame, bool useSameColor)
+cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
 {
     cv::Mat grayFrame = convertToGrayscale(frame);
 
-    auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, 3);
+    auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, color, 3);
 
     cv::parallel_for_(cv::Range(0, grayFrame.rows), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; ++i) {
             for (int j = 0; j < grayFrame.cols; ++j) {
-                processBlockAscii(grayFrame, occupancyMask, edgeAsciiArt, i, j);
+                processBlockAscii(grayFrame, occupancyMask, edgeAsciiArt, i, j, color);
             }
         }
     });
     return edgeAsciiArt;
 }
 
-void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j)
+void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, cv::Scalar color)
 {
     if (i % 8 != 0 || j % 8 != 0) {
         return;
@@ -70,7 +70,7 @@ void processBlockAscii(const cv::Mat &grayFrame, cv::Mat&occupancyMask, cv::Mat 
     int asciiIndex = avgLuminance * (asciiChars.length() - 1) / 255;
     char asciiChar = asciiChars[asciiIndex];
 
-    cv::putText(asciiArt, std::string(1, asciiChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+    cv::putText(asciiArt, std::string(1, asciiChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, color, 1, cv::LINE_AA);
 }
 
 cv::Mat applyCanny(const cv::Mat &frame, int kernelSize)
@@ -82,7 +82,7 @@ cv::Mat applyCanny(const cv::Mat &frame, int kernelSize)
     return edges;
 }
 
-std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int kernelSize)
+std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, cv::Scalar color, int kernelSize)
 {
     cv::Mat edges = applyCanny(grayFrame, kernelSize);
 
@@ -146,7 +146,7 @@ std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &grayFrame, int ker
                 continue;
             }
 
-            cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, cv::Scalar(255, 0, 255), 1, cv::LINE_AA);
+            cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(j, i + 8), cv::FONT_HERSHEY_PLAIN, 0.5, color, 1, cv::LINE_AA);
             for (int y = i; y < std::min(i + 8, edges.rows); ++y) {
                 maskPtr = occupancyMask.ptr<uchar>(y);
                 for (int x = j; x < std::min(j + 8, edges.cols); ++x) {

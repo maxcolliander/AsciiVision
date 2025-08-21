@@ -54,14 +54,15 @@ Follow these steps to set up AsciiVision on your system:
 ### Running the Program
 To process a video file, use the following command:
 ```sh
-./AsciiVision <video_file> [--save]
+./AsciiVision <video_file> [--save] [--color R,G,B]
 ```
 - `<video_file>`: Path to the input video file.
 - `--save`: (Optional) Save the processed video to disk.
+- `--color R,G,B`: (Optional) Color all ASCII symbols with the specified RGB color(e.g., `--color 255,0,0` for red).
 
 ### Example
 ```sh
-./AsciiVision ../data/sample.mp4 --save
+./AsciiVision ../data/sample.mp4 --save --color 0,255,0
 ```
 
 ### Directory Structure
