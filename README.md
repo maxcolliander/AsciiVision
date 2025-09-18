@@ -76,7 +76,6 @@ To process a video file, use the following command:
 Here are some planned improvements and features for AsciiVision:
 - [ ] Add support for webcam usage and live footage processing.
 - [ ] Modularize the ASCII processing pipeline for better maintainability.
-- [ ] Add a file selection option when the program is run.
 - [ ] Implement color correction for better visual output --saturation.
 - [ ] Add braille option --braille
 - [ ] Add settings as a input to -> convertToAscii function
