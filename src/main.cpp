@@ -67,6 +67,10 @@ int main(int argc, char** argv) {
     if (videoFile.empty()) {
         cout << "No video file provided. Trying to open the default camera..." << endl;
         cap.open(0);
+        if (saveToFile) {
+            cerr << "Error: --save is not supported when using the camera as input." << endl;
+            return -1;
+        }
     } else {
         cap.open(videoFile);
     }
