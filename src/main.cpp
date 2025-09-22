@@ -22,21 +22,17 @@ void showProgress(int currentFrame, int totalFrames) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2 || argc > 4) {
-        cerr << "Usage: " << argv[0] << " <video_file> [--save] [--color [R,G,G]]" << std::endl;
-        return -1;
-    }
-
-    string videoFile = argv[1];
+    string videoFile;
     bool saveToFile = false;
     bool useColor = false;
-    bool useTheme = false;
     cv::Scalar color;
-    for (int i = 2; i < argc; ++i){
-        if (string(argv[i]) == "--save") {
+
+    // Parse arguments
+    for (int i = 1; i < argc; ++i) {
+        string arg = argv[i];
+        if (arg == "--save") {
             saveToFile = true;
-        }
-        else if (string(argv[i]) == "--color") {
+        } else if (arg == "--color") {
             useColor = true;
             if (i + 1 < argc) {
                 std::string colorStr = argv[++i];
@@ -44,7 +40,7 @@ int main(int argc, char** argv) {
                 char comma;
                 int r, g, b;
                 if (iss >> r >> comma >> g >> comma >> b && comma == ',') {
-                    color = cv::Scalar(b, g, r);  // OpenCV uses BGR format
+                    color = cv::Scalar(b, g, r);  // OpenCV uses BGR
                 } else {
                     cerr << "Error: Invalid color format. Use R,G,B." << endl;
                     return -1;
@@ -53,24 +49,35 @@ int main(int argc, char** argv) {
                 cerr << "Error: --color option requires an argument." << endl;
                 return -1;
             }
-        }
-        else if (string(argv[i]) == "--help") {
-            cout << "Usage: " << argv[0] << " <video_file> [--save] [--color R,G,B]" << endl;
+        } else if (arg == "--help") {
+            cout << "Usage: " << argv[0] << " [video_file] [--save] [--color R,G,B]" << endl;
             cout << "Options:" << endl;
-            cout << "  --save       Save the ASCII video to a file." << endl;
+            cout << "  --save         Save the ASCII video to a file." << endl;
             cout << "  --color R,G,B  Use specified color for ASCII symbols." << endl;
             return 0;
+        } else if (videoFile.empty()) {
+            videoFile = arg;
+        } else {
+            cerr << "Unknown argument: " << arg << endl;
+            return -1;
         }
     }
-    cv::VideoCapture cap(videoFile);
+
+    cv::VideoCapture cap;
+    if (videoFile.empty()) {
+        cout << "No video file provided. Trying to open the default camera..." << endl;
+        cap.open(0);
+    } else {
+        cap.open(videoFile);
+    }
 
     if (!cap.isOpened()) {
-        cerr << "Error: Could not open video file." << std::endl;
+        cerr << "Error: Could not open video source." << endl;
         return -1;
     }
     
     double fps = cap.get(cv::CAP_PROP_FPS);
-    if (fps <= 0) fps = 30;
+    if (fps < 1) fps = 30;
     int width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
     int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
     int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));

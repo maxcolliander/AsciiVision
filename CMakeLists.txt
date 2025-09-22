@@ -4,6 +4,9 @@ project(AsciiVision)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_BUILD_TYPE Release)
+
 find_package(OpenCV REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
