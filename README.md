@@ -51,19 +51,24 @@ Follow these steps to set up AsciiVision on your system:
 
 ## Usage
 ### Running the Program
-To process a video file, use the following command:
+To process a video file or use your webcam, use the following command:
 ```sh
-./AsciiVision <video_file> [--save] [--color R,G,B]
+./AsciiVision [video_file] [--save] [--color R,G,B]
 ```
-- `<video_file>`: Path to the input video file.
-- `--save`: (Optional) Save the processed video to disk.
-- `--color R,G,B`: (Optional) Color all ASCII symbols with the specified RGB color(e.g., `--color 255,0,0` for red).
+- `[video_file]`: (Optional) Path to the input video file. If omitted, the program will use your default camera.
+- `--save`: (Optional) Save the processed video to disk. **Not supported when using the camera.**
+- `--color R,G,B`: (Optional) Color all ASCII symbols with the specified RGB color (e.g., `--color 255,0,0` for red).
 - `--help`: Display a help message.
 
-### Example
-```sh
-./AsciiVision ../data/sample.mp4 --save --color 0,255,0
-```
+#### Examples
+- Process a video file:
+  ```sh
+  ./AsciiVision ../data/sample.mp4 --save --color 0,255,0
+  ```
+- Use the webcam with colored ASCII:
+  ```sh
+  ./AsciiVision --color 255,0,0
+  ```
 
 ### Directory Structure
 - **`data/`**: Stores video files for testing.
