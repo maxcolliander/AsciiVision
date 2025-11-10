@@ -35,16 +35,62 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
 
     cv::Mat smallColor;
     if (useOriginalColor) {
-        int cellSize = 8;
-        // Precompute block colors
-        cv::resize(frame, smallColor, cv::Size(frame.cols / cellSize, frame.rows / cellSize), 0, 0, cv::INTER_AREA);
+        int blocksY = frame.rows / cellSize;
+        int blocksX = frame.cols / cellSize;
+        
+        // Heuristic: use resize for landscape (wide) frames, integral images for portrait (tall) frames
+        // Resize is super-optimized for wide frames; integral images are faster for tall frames
+        if (frame.cols >= frame.rows) {
+            // Landscape: use fast resize
+            cv::resize(frame, smallColor, cv::Size(blocksX, blocksY), 0, 0, cv::INTER_AREA);
+        } else {
+            // Portrait: use integral images for better performance
+            smallColor.create(blocksY, blocksX, CV_8UC3);
+
+            std::vector<cv::Mat> bgr;
+            cv::split(frame, bgr);
+
+            cv::Mat ib, ig, ir;
+            cv::integral(bgr[0], ib, CV_64F);
+            cv::integral(bgr[1], ig, CV_64F);
+            cv::integral(bgr[2], ir, CV_64F);
+
+            auto blockMean = [&](const cv::Mat& I, int y0, int x0, int h, int w) -> double {
+                const double* p0 = I.ptr<double>(y0);
+                const double* p1 = I.ptr<double>(y0 + h);
+                double sum = p1[x0 + w] - p1[x0] - p0[x0 + w] + p0[x0];
+                return sum / (h * w);
+            };
+
+            int stripesColor = std::max(1, std::min(blocksY, cv::getNumThreads() * 2));
+            cv::parallel_for_(cv::Range(0, blocksY), [&](const cv::Range& range){
+                for (int by = range.start; by < range.end; ++by) {
+                    cv::Vec3b* dst = smallColor.ptr<cv::Vec3b>(by);
+                    int y0 = by * cellSize;
+                    for (int bx = 0; bx < blocksX; ++bx) {
+                        int x0 = bx * cellSize;
+                        double mb = blockMean(ib, y0, x0, cellSize, cellSize);
+                        double mg = blockMean(ig, y0, x0, cellSize, cellSize);
+                        double mr = blockMean(ir, y0, x0, cellSize, cellSize);
+                        dst[bx] = cv::Vec3b(
+                            static_cast<uchar>(std::clamp(mb, 0.0, 255.0)),
+                            static_cast<uchar>(std::clamp(mg, 0.0, 255.0)),
+                            static_cast<uchar>(std::clamp(mr, 0.0, 255.0))
+                        );
+                    }
+                }
+            }, stripesColor);
+        }
     }
 
     auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, color, 3, useOriginalColor, smallColor);
 
     int rows = frame.rows;
     int cols = frame.cols;
-    cv::parallel_for_(cv::Range(0, rows / cellSize), [&](const cv::Range& range) {
+    int blockRows = rows / cellSize;
+    // Adaptive stripes: cap number of tasks to about 2x OpenCV thread count to reduce scheduling overhead on tall frames
+    int stripesBlocks = std::max(1, std::min(blockRows, cv::getNumThreads() * 2));
+    cv::parallel_for_(cv::Range(0, blockRows), [&](const cv::Range& range) {
         for (int bi = range.start; bi < range.end; ++bi) {
             for (int bj = 0; bj < cols / cellSize; ++bj) {
                 int i = bi * cellSize;
@@ -52,7 +98,7 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
                 processBlockAscii(frame, smallColor, occupancyMask, edgeAsciiArt, i, j, useOriginalColor, color);
             }
         }
-    });
+    }, stripesBlocks);
     return edgeAsciiArt;
 }
 
@@ -79,6 +125,49 @@ EdgeData detectEdges(const cv::Mat &frame, int kernelSize)
     return {edges, gradX, gradY};
 }
 
+// Bitmap font: 8x8 monospace glyphs for ASCII characters " .icoPO?@■" and block char (127)
+// Each character is stored as 8 rows of 8 bits (1 = pixel on, 0 = pixel off)
+static const std::map<char, std::array<uint8_t, 8>> g_fontBitmap = {
+    {' ', {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}},
+    {'.', {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00}}},
+    {'i', {{0x00, 0x0C, 0x00, 0x0C, 0x0C, 0x0C, 0x0C, 0x00}}},
+    {'c', {{0x00, 0x00, 0x1C, 0x20, 0x20, 0x20, 0x1C, 0x00}}},
+    {'o', {{0x00, 0x00, 0x18, 0x24, 0x24, 0x24, 0x18, 0x00}}},
+    {'P', {{0x00, 0x38, 0x24, 0x38, 0x20, 0x20, 0x3E, 0x00}}},
+    {'O', {{0x00, 0x18, 0x24, 0x24, 0x24, 0x24, 0x18, 0x00}}},
+    {'?', {{0x00, 0x38, 0x44, 0x04, 0x08, 0x00, 0x08, 0x00}}},
+    {'@', {{0x00, 0x18, 0x24, 0x2A, 0x2A, 0x20, 0x1C, 0x00}}},
+    {'#', {{0x00, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x00}}},
+    // Edge detection characters
+    {'|', {{0x00, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x00}}}, // Vertical line
+    {'-', {{0x00, 0x00, 0x00, 0x3C, 0x3C, 0x00, 0x00, 0x00}}}, // Horizontal line
+    {'/', {{0x00, 0x04, 0x08, 0x08, 0x10, 0x10, 0x20, 0x00}}}, // Diagonal /
+    {'\\', {{0x00, 0x20, 0x10, 0x10, 0x08, 0x08, 0x04, 0x00}}}, // Diagonal 
+};
+
+// Fast blitter: draw an 8x8 character bitmap at (baseX, baseY) with given color
+void blitCharacter(cv::Mat &dst, int baseX, int baseY, char ch, cv::Vec3b color) {
+    auto it = g_fontBitmap.find(ch);
+    if (it == g_fontBitmap.end()) return; // Character not in font
+
+    const auto& glyph = it->second;
+    int maxY = std::min(baseY + 8, dst.rows);
+    int maxX = std::min(baseX + 8, dst.cols);
+
+    for (int py = baseY; py < maxY; ++py) {
+        cv::Vec3b* row = dst.ptr<cv::Vec3b>(py);
+        int glyphRow = py - baseY;
+        uint8_t rowBits = glyph[glyphRow];
+
+        for (int px = baseX; px < maxX; ++px) {
+            int bitIdx = 7 - (px - baseX);
+            if ((rowBits >> bitIdx) & 1) {
+                row[px] = color;
+            }
+        }
+    }
+}
+
 void processBlockAscii(const cv::Mat &frame, const cv::Mat &smallColor, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, bool useOriginalColor, cv::Scalar color)
 {
     const int cellSize = 8;
@@ -100,7 +189,12 @@ void processBlockAscii(const cv::Mat &frame, const cv::Mat &smallColor, cv::Mat&
     }
 
     int avgLuminance = blockSum / pixelCount;
-    char asciiChar = asciiChars[avgLuminance * (asciiChars.size() - 1) / 255];
+
+    const float brightnessGain = 1.5f;
+    int brightenedLuminance = std::min(255, static_cast<int>(avgLuminance * brightnessGain));
+
+
+    char asciiChar = asciiChars[brightenedLuminance * (asciiChars.size() - 1) / 255];
 
     // Get block color
     cv::Scalar colorToUse = color;
@@ -111,7 +205,7 @@ void processBlockAscii(const cv::Mat &frame, const cv::Mat &smallColor, cv::Mat&
         colorToUse = cv::Scalar(avgColorVec[0], avgColorVec[1], avgColorVec[2]);
     }
 
-    cv::putText(asciiArt, std::string(1, asciiChar), cv::Point(j, i + cellSize), cv::FONT_HERSHEY_PLAIN, 0.5, colorToUse, 1, cv::LINE_AA);
+    blitCharacter(asciiArt, j, i, asciiChar, cv::Vec3b(colorToUse[0], colorToUse[1], colorToUse[2]));
 }
 
 std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar color, int kernelSize, bool useOriginalColor, const cv::Mat &smallColor) 
@@ -127,6 +221,7 @@ std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar
     float scaleX = float(frame.cols) / smallGray.cols;
     float scaleY = float(frame.rows) / smallGray.rows;
 
+    int stripesEdges = std::max(1, std::min(smallGray.rows, cv::getNumThreads() * 2));
     cv::parallel_for_(cv::Range(0, smallGray.rows), [&](const cv::Range &range) {
         for (int i = range.start; i < range.end; ++i) {
             for (int j = 0; j < smallGray.cols; ++j) {
@@ -166,12 +261,12 @@ std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar
                     colorToUse = cv::Scalar(avgColorVec[0], avgColorVec[1], avgColorVec[2]);
                 }
 
-                cv::putText(edgeAsciiArt, std::string(1, edgeChar), cv::Point(fullX, fullY+cellSize),
-                            cv::FONT_HERSHEY_PLAIN, 0.5, colorToUse, 1, cv::LINE_AA);
+                // Use fast bitmap blitter instead of putText
+                blitCharacter(edgeAsciiArt, fullX, fullY, edgeChar, cv::Vec3b(colorToUse[0], colorToUse[1], colorToUse[2]));
                 cv::rectangle(occupancyMask, cv::Rect(fullX, fullY, cellSize, cellSize), cv::Scalar(255), cv::FILLED);
             }
         }
-    });
+    }, stripesEdges);
 
     return {edgeAsciiArt, occupancyMask};
 }

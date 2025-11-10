@@ -4,7 +4,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
-const std::string asciiChars = " .icoPO?@■"; // Characters used for ASCII art from dark to light¨
+const std::string asciiChars = " .icoPO?@#"; // Characters used for ASCII art from dark to light (block)
 
 struct EdgeData {
     cv::Mat edges;   // binary edge map

@@ -1,4 +1,5 @@
 #include <iostream>     // For input/output
+#include <sstream>      // For istringstream
 #include <opencv2/opencv.hpp>  // OpenCV main header for video processing
 #include "../include/ascii_filter.hpp"
 #include <cstdlib>
@@ -118,7 +119,7 @@ int main(int argc, char** argv) {
 
     while (true) {
         cap >> frame;
-        startTime = cv::getTickCount(); 
+        startTime = cv::getTickCount();
 
         if (frame.empty()) {
             break;
@@ -151,4 +152,8 @@ int main(int argc, char** argv) {
     cap.release();
     writer.release();
     cv::destroyAllWindows();
+
+    if (frameCount > 0 && totalTime > 0.0) {
+        cout << "Average Processing FPS: " << (frameCount / totalTime) << endl;
+    }
 }
