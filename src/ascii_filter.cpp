@@ -189,12 +189,7 @@ void processBlockAscii(const cv::Mat &frame, const cv::Mat &smallColor, cv::Mat&
     }
 
     int avgLuminance = blockSum / pixelCount;
-
-    const float brightnessGain = 1.5f;
-    int brightenedLuminance = std::min(255, static_cast<int>(avgLuminance * brightnessGain));
-
-
-    char asciiChar = asciiChars[brightenedLuminance * (asciiChars.size() - 1) / 255];
+    char asciiChar = asciiChars[avgLuminance * (asciiChars.size() - 1) / 255];
 
     // Get block color
     cv::Scalar colorToUse = color;

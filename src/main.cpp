@@ -154,6 +154,9 @@ int main(int argc, char** argv) {
     cv::destroyAllWindows();
 
     if (frameCount > 0 && totalTime > 0.0) {
+        if (saveToFile) {
+            cout << "\n";
+        }
         cout << "Average Processing FPS: " << (frameCount / totalTime) << endl;
     }
 }
