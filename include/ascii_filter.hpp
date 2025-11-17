@@ -21,8 +21,8 @@ cv::Mat convertToAscii(cv::Mat& frame, cv::Scalar color = cv::Scalar(-1, -1, -1)
 
 EdgeData detectEdges(const cv::Mat& frame, int kernelSize = 3);
 
-std::pair<cv::Mat, cv::Mat>applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar color, int kernelSize = 3, bool useOriginalColor = false, const cv::Mat &smallColor = cv::Mat());
+std::tuple<cv::Mat, cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar color, int kernelSize = 3, bool useOriginalColor = false, const cv::Mat &smallColor = cv::Mat());
 
-void processBlockAscii(const cv::Mat &grayFrame, const cv::Mat &smallColor, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, bool useOriginalColor, cv::Scalar color);
+void processBlockAscii(const cv::Mat &smallGray, const cv::Mat &smallColor, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, bool useOriginalColor, cv::Scalar color);
 
 #endif

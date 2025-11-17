@@ -40,7 +40,7 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
         cv::resize(frame, smallColor, cv::Size(frame.cols / cellSize, frame.rows / cellSize), 0, 0, cv::INTER_AREA);
     }
 
-    auto [edgeAsciiArt, occupancyMask] = applyEdgeBasedAscii(frame, color, 3, useOriginalColor, smallColor);
+    auto [edgeAsciiArt, occupancyMask, smallGray] = applyEdgeBasedAscii(frame, color, 3, useOriginalColor, smallColor);
 
     int rows = frame.rows;
     int cols = frame.cols;
@@ -49,7 +49,7 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
             for (int bj = 0; bj < cols / cellSize; ++bj) {
                 int i = bi * cellSize;
                 int j = bj * cellSize;
-                processBlockAscii(frame, smallColor, occupancyMask, edgeAsciiArt, i, j, useOriginalColor, color);
+                processBlockAscii(smallGray, smallColor, occupancyMask, edgeAsciiArt, i, j, useOriginalColor, color);
             }
         }
     });
@@ -79,27 +79,24 @@ EdgeData detectEdges(const cv::Mat &frame, int kernelSize)
     return {edges, gradX, gradY};
 }
 
-void processBlockAscii(const cv::Mat &frame, const cv::Mat &smallColor, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, bool useOriginalColor, cv::Scalar color)
+void processBlockAscii(const cv::Mat &smallGray, const cv::Mat &smallColor, cv::Mat&occupancyMask, cv::Mat &asciiArt, int i, int j, bool useOriginalColor, cv::Scalar color)
 {
     const int cellSize = 8;
     if (occupancyMask.at<uchar>(i, j) == 255) return;
 
-    int blockSum = 0;
-    int pixelCount = 0;
-
-    // Compute average luminance for the block
-    for (int y = i; y < std::min(i + cellSize, frame.rows); ++y) {
-        const cv::Vec3b* rowPtr = frame.ptr<cv::Vec3b>(y);
+    // Get pre-computed average luminance from downscaled grayscale
+    int smallI = i / cellSize;
+    int smallJ = j / cellSize;
+    int avgLuminance = smallGray.at<uchar>(smallI, smallJ);
+    
+    // Mark occupancy
+    for (int y = i; y < std::min(i + cellSize, occupancyMask.rows); ++y) {
         uchar* maskPtr = occupancyMask.ptr<uchar>(y);
-        for (int x = j; x < std::min(j + cellSize, frame.cols); ++x) {
-            const cv::Vec3b &px = rowPtr[x];
-            blockSum += static_cast<int>(0.2126*px[2] + 0.7152*px[1] + 0.0722*px[0]);
-            pixelCount++;
+        for (int x = j; x < std::min(j + cellSize, occupancyMask.cols); ++x) {
             maskPtr[x] = 255;
         }
     }
-
-    int avgLuminance = blockSum / pixelCount;
+    
     char asciiChar = asciiChars[avgLuminance * (asciiChars.size() - 1) / 255];
 
     // Get block color
@@ -114,7 +111,7 @@ void processBlockAscii(const cv::Mat &frame, const cv::Mat &smallColor, cv::Mat&
     cv::putText(asciiArt, std::string(1, asciiChar), cv::Point(j, i + cellSize), cv::FONT_HERSHEY_PLAIN, 0.5, colorToUse, 1, cv::LINE_AA);
 }
 
-std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar color, int kernelSize, bool useOriginalColor, const cv::Mat &smallColor) 
+std::tuple<cv::Mat, cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar color, int kernelSize, bool useOriginalColor, const cv::Mat &smallColor) 
 {
     const int cellSize = 8;
     cv::Mat grayFrame = convertToGrayscale(frame);
@@ -173,5 +170,5 @@ std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar
         }
     });
 
-    return {edgeAsciiArt, occupancyMask};
+    return {edgeAsciiArt, occupancyMask, smallGray};
 }

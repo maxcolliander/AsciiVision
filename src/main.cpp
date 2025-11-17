@@ -124,11 +124,13 @@ int main(int argc, char** argv) {
             break;
         }
 
+        frameCount++;
+        
         if (useColor)
             asciiFrame = convertToAscii(frame, color);
         else
             asciiFrame = convertToAscii(frame);
-        frameCount++;
+        
         double duration = (cv::getTickCount() - startTime) / cv::getTickFrequency();
         totalTime += duration;
 
@@ -151,4 +153,8 @@ int main(int argc, char** argv) {
     cap.release();
     writer.release();
     cv::destroyAllWindows();
+
+    if (frameCount > 0 && totalTime > 0.0) {
+        cout << "Average Processing FPS: " << (frameCount / totalTime) << endl;
+    }
 }
