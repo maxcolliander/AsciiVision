@@ -42,7 +42,7 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
         // Resize is super-optimized for wide frames; integral images are faster for tall frames
         if (frame.cols >= frame.rows) {
             // Landscape: use fast resize
-            cv::resize(frame, smallColor, cv::Size(blocksX, blocksY), 0, 0, cv::INTER_AREA);
+            cv::resize(frame, smallColor, cv::Size(blocksX, blocksY), 0, 0, cv::INTER_LINEAR);
         } else {
             // Portrait: use integral images for better performance
             smallColor.create(blocksY, blocksX, CV_8UC3);
@@ -125,7 +125,7 @@ EdgeData detectEdges(const cv::Mat &frame, int kernelSize)
     return {edges, gradX, gradY};
 }
 
-// Bitmap font: 8x8 monospace glyphs for ASCII characters " .icoPO?@■" and block char (127)
+// Bitmap font: 8x8 monospace glyphs for ASCII characters " .icoPO?@#" and block char (127)
 // Each character is stored as 8 rows of 8 bits (1 = pixel on, 0 = pixel off)
 static const std::map<char, std::array<uint8_t, 8>> g_fontBitmap = {
     {' ', {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}},
@@ -256,7 +256,6 @@ std::pair<cv::Mat, cv::Mat> applyEdgeBasedAscii(const cv::Mat &frame, cv::Scalar
                     colorToUse = cv::Scalar(avgColorVec[0], avgColorVec[1], avgColorVec[2]);
                 }
 
-                // Use fast bitmap blitter instead of putText
                 blitCharacter(edgeAsciiArt, fullX, fullY, edgeChar, cv::Vec3b(colorToUse[0], colorToUse[1], colorToUse[2]));
                 cv::rectangle(occupancyMask, cv::Rect(fullX, fullY, cellSize, cellSize), cv::Scalar(255), cv::FILLED);
             }
