@@ -35,9 +35,7 @@ cv::Mat convertToAscii(cv::Mat &frame, cv::Scalar color)
 
     cv::Mat smallColor;
     if (useOriginalColor) {
-        int cellSize = 8;
-        // Precompute block colors
-        cv::resize(frame, smallColor, cv::Size(frame.cols / cellSize, frame.rows / cellSize), 0, 0, cv::INTER_AREA);
+        cv::resize(frame, smallColor, cv::Size(frame.cols / cellSize, frame.rows / cellSize), 0, 0, cv::INTER_LINEAR);
     }
 
     auto [edgeAsciiArt, occupancyMask, smallGray] = applyEdgeBasedAscii(frame, color, 3, useOriginalColor, smallColor);
