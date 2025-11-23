@@ -7,7 +7,7 @@ cv::Mat downscale(const cv::Mat &frame)
     int newHeight = frame.rows / 8;
     cv::Size newSize(newWidth, newHeight);
     cv::Mat downscaledFrame;
-    cv::resize(frame, downscaledFrame, newSize, 0, 0, cv::INTER_AREA);
+    cv::resize(frame, downscaledFrame, newSize, 0, 0, cv::INTER_LINEAR);
     return downscaledFrame;
 }
 
@@ -17,7 +17,7 @@ cv::Mat upscale(const cv::Mat &frame)
     int newHeight = frame.rows * 8;
     cv::Size newSize(newWidth, newHeight);
     cv::Mat upscaledFrame;
-    cv::resize(frame, upscaledFrame, newSize, 0, 0, cv::INTER_AREA);
+    cv::resize(frame, upscaledFrame, newSize, 0, 0, cv::INTER_LINEAR);
     return upscaledFrame;
 }
 
